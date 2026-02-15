@@ -18,16 +18,9 @@ type Change struct {
 	ApplyFunc   func() error
 }
 
-// Result holds the outcome of applying a change.
-type Result struct {
-	Change Change
-	Error  error
-}
-
 // Engine computes and applies tuning changes.
 type Engine struct {
 	Profile profile.Profile
-	DryRun  bool
 }
 
 // NewEngine creates a tuning engine for the given profile.
@@ -54,9 +47,9 @@ func (e *Engine) ComputeChanges() []Change {
 	return changes
 }
 
-// Apply executes all computed changes.
-func (e *Engine) Apply(changes []Change, auto bool) []Result {
-	var results []Result
+// Apply executes all computed changes. Returns (success, failed) counts.
+func (e *Engine) Apply(changes []Change, auto bool) (int, int) {
+	success, failed := 0, 0
 
 	for _, c := range changes {
 		if !auto {
@@ -64,19 +57,20 @@ func (e *Engine) Apply(changes []Change, auto bool) []Result {
 		}
 
 		err := c.ApplyFunc()
-		r := Result{Change: c, Error: err}
-		results = append(results, r)
-
-		if !auto {
-			if err != nil {
+		if err != nil {
+			failed++
+			if !auto {
 				color.Red("FAILED (%v)", err)
-			} else {
+			}
+		} else {
+			success++
+			if !auto {
 				color.Green("OK")
 			}
 		}
 	}
 
-	return results
+	return success, failed
 }
 
 // Backup returns a map of path -> original value for all changes.

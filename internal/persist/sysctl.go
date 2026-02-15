@@ -44,9 +44,9 @@ func WriteSysctl(p profile.Profile) error {
 
 // RemoveSysctl removes the tuner sysctl config.
 func RemoveSysctl() error {
-	path := SysctlPath()
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	err := os.Remove(SysctlPath())
+	if os.IsNotExist(err) {
 		return nil
 	}
-	return os.Remove(path)
+	return err
 }

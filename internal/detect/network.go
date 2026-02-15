@@ -133,8 +133,8 @@ func NetworkSection(info NetworkInfo) output.Section {
 		output.Field{Key: "TCP Congestion", Value: info.TCPCongestion, Status: congStatus},
 		output.Field{Key: "TCP Fast Open", Value: fmt.Sprintf("%d", info.TCPFastOpen), Status: output.StatusInfo},
 		output.Field{Key: "MTU Probing", Value: fmt.Sprintf("%d", info.TCPMTUProbing), Status: output.StatusInfo},
-		output.Field{Key: "Recv Buffer Max", Value: formatBytes(info.RmemMax), Status: output.StatusInfo},
-		output.Field{Key: "Send Buffer Max", Value: formatBytes(info.WmemMax), Status: output.StatusInfo},
+		output.Field{Key: "Recv Buffer Max", Value: FormatBytes(info.RmemMax), Status: output.StatusInfo},
+		output.Field{Key: "Send Buffer Max", Value: FormatBytes(info.WmemMax), Status: output.StatusInfo},
 	)
 
 	// Interfaces
@@ -171,7 +171,7 @@ func NetworkSection(info NetworkInfo) output.Section {
 	return sec
 }
 
-func formatBytes(b int) string {
+func FormatBytes(b int) string {
 	switch {
 	case b >= 1<<20:
 		return fmt.Sprintf("%d MB", b/(1<<20))

@@ -17,13 +17,12 @@ type GPUInfo struct {
 
 // GPUCard holds info about a single GPU.
 type GPUCard struct {
-	Name          string
-	Driver        string
-	Vendor        string
-	PowerProfile  string // auto, high, low (amdgpu)
-	PowerDPM      string
-	MemTotalMB    int
-	MemUsedMB     int
+	Name         string
+	Driver       string
+	Vendor       string
+	PowerProfile string // auto, high, low (amdgpu)
+	MemTotalMB   int
+	MemUsedMB    int
 }
 
 // DetectGPU gathers GPU information from /sys/class/drm/.
@@ -70,11 +69,6 @@ func DetectGPU() GPUInfo {
 		// AMDGPU power profile
 		if v, err := sysfs.ReadString(filepath.Join(deviceBase, "power_dpm_force_performance_level")); err == nil {
 			card.PowerProfile = v
-		}
-
-		// AMDGPU DPM state
-		if v, err := sysfs.ReadString(filepath.Join(deviceBase, "power_dpm_state")); err == nil {
-			card.PowerDPM = v
 		}
 
 		// VRAM (amdgpu/i915)

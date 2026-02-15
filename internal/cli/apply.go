@@ -71,23 +71,12 @@ func runApply(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println()
-	results := engine.Apply(changes, applyAuto)
-
-	// Summary
-	success := 0
-	failed := 0
-	for _, r := range results {
-		if r.Error == nil {
-			success++
-		} else {
-			failed++
-		}
-	}
+	success, failed := engine.Apply(changes, applyAuto)
 
 	fmt.Printf("\nApplied: %d succeeded, %d failed\n", success, failed)
 
 	if failed > 0 {
-		color.Yellow("Some changes failed. Run with --verbose for details.")
+		color.Yellow("Some changes failed.")
 	}
 
 	return nil

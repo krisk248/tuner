@@ -146,7 +146,7 @@ func suggestNetwork(p profile.Profile) output.Section {
 		sec.Fields = append(sec.Fields, diffField("TCP Fast Open", fmt.Sprintf("%d", cur), fmt.Sprintf("%d", v.TCPFastOpen)))
 	}
 	if cur, err := sysfs.ReadInt(sysfs.NetCoreBufMax); err == nil && cur != v.RmemMax {
-		sec.Fields = append(sec.Fields, diffField("Recv Buffer Max", formatSize(cur), formatSize(v.RmemMax)))
+		sec.Fields = append(sec.Fields, diffField("Recv Buffer Max", detect.FormatBytes(cur), detect.FormatBytes(v.RmemMax)))
 	}
 
 	return sec
@@ -160,13 +160,3 @@ func diffField(key, current, recommended string) output.Field {
 	}
 }
 
-func formatSize(bytes int) string {
-	switch {
-	case bytes >= 1<<20:
-		return fmt.Sprintf("%d MB", bytes/(1<<20))
-	case bytes >= 1<<10:
-		return fmt.Sprintf("%d KB", bytes/(1<<10))
-	default:
-		return fmt.Sprintf("%d B", bytes)
-	}
-}

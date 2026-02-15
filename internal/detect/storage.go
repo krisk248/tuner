@@ -35,7 +35,6 @@ type MountInfo struct {
 	Device     string
 	MountPoint string
 	FSType     string
-	Options    string
 }
 
 // DetectStorage gathers storage device information.
@@ -113,7 +112,7 @@ func DetectStorage() StorageInfo {
 	if lines, err := sysfs.ReadLines("/proc/mounts"); err == nil {
 		for _, line := range lines {
 			fields := strings.Fields(line)
-			if len(fields) < 4 {
+			if len(fields) < 3 {
 				continue
 			}
 			// Only show real filesystems
@@ -124,7 +123,6 @@ func DetectStorage() StorageInfo {
 				Device:     fields[0],
 				MountPoint: fields[1],
 				FSType:     fields[2],
-				Options:    fields[3],
 			}
 			info.Mounts = append(info.Mounts, mount)
 			info.FileSystems[fields[0]] = fields[2]

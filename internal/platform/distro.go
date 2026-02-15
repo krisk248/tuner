@@ -69,16 +69,3 @@ func DetectDistro() Distro {
 	return d
 }
 
-// PackageManager returns the package manager command for the distro family.
-func (d Distro) PackageManager() string {
-	switch d.Family {
-	case FamilyRHEL:
-		return "dnf"
-	case FamilyDebian:
-		return "apt"
-	case FamilyArch:
-		return "pacman"
-	default:
-		return ""
-	}
-}

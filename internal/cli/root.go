@@ -7,7 +7,6 @@ import (
 
 var (
 	version   = "dev"
-	verbose   bool
 	noColor   bool
 	outFormat string
 )
@@ -29,7 +28,6 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable colored output")
 	rootCmd.PersistentFlags().StringVarP(&outFormat, "format", "f", "table", "output format (table, json, markdown)")
 	rootCmd.Version = version

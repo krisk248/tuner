@@ -41,9 +41,9 @@ func WriteUdev(p profile.Profile) error {
 
 // RemoveUdev removes the tuner udev rules.
 func RemoveUdev() error {
-	path := UdevPath()
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	err := os.Remove(UdevPath())
+	if os.IsNotExist(err) {
 		return nil
 	}
-	return os.Remove(path)
+	return err
 }
