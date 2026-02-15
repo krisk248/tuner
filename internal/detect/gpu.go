@@ -68,31 +68,21 @@ func DetectGPU() GPUInfo {
 		}
 
 		// AMDGPU power profile
-		profilePath := filepath.Join(deviceBase, "power_dpm_force_performance_level")
-		if sysfs.Exists(profilePath) {
-			if v, err := sysfs.ReadString(profilePath); err == nil {
-				card.PowerProfile = v
-			}
+		if v, err := sysfs.ReadString(filepath.Join(deviceBase, "power_dpm_force_performance_level")); err == nil {
+			card.PowerProfile = v
 		}
 
 		// AMDGPU DPM state
-		dpmPath := filepath.Join(deviceBase, "power_dpm_state")
-		if sysfs.Exists(dpmPath) {
-			if v, err := sysfs.ReadString(dpmPath); err == nil {
-				card.PowerDPM = v
-			}
+		if v, err := sysfs.ReadString(filepath.Join(deviceBase, "power_dpm_state")); err == nil {
+			card.PowerDPM = v
 		}
 
 		// VRAM (amdgpu/i915)
-		memTotalPath := filepath.Join(deviceBase, "mem_info_vram_total")
-		memUsedPath := filepath.Join(deviceBase, "mem_info_vram_used")
-		if sysfs.Exists(memTotalPath) {
-			if v, err := sysfs.ReadInt64(memTotalPath); err == nil {
-				card.MemTotalMB = int(v / (1024 * 1024))
-			}
-			if v, err := sysfs.ReadInt64(memUsedPath); err == nil {
-				card.MemUsedMB = int(v / (1024 * 1024))
-			}
+		if v, err := sysfs.ReadInt64(filepath.Join(deviceBase, "mem_info_vram_total")); err == nil {
+			card.MemTotalMB = int(v / (1024 * 1024))
+		}
+		if v, err := sysfs.ReadInt64(filepath.Join(deviceBase, "mem_info_vram_used")); err == nil {
+			card.MemUsedMB = int(v / (1024 * 1024))
 		}
 
 		info.Cards = append(info.Cards, card)

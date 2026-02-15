@@ -53,13 +53,7 @@ func DetectKernel() KernelVersion {
 
 // AtLeast returns true if the kernel version is >= major.minor.
 func (kv KernelVersion) AtLeast(major, minor int) bool {
-	if kv.Major > major {
-		return true
-	}
-	if kv.Major == major && kv.Minor >= minor {
-		return true
-	}
-	return false
+	return kv.Major > major || (kv.Major == major && kv.Minor >= minor)
 }
 
 // String returns a human-readable version string.

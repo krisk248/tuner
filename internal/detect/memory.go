@@ -3,6 +3,7 @@ package detect
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/krisk248/tuner/internal/output"
@@ -42,8 +43,7 @@ func DetectMemory() MemoryInfo {
 				continue
 			}
 			key := strings.TrimSuffix(parts[0], ":")
-			var val int64
-			fmt.Sscanf(parts[1], "%d", &val)
+			val, _ := strconv.ParseInt(parts[1], 10, 64)
 
 			switch key {
 			case "MemTotal":
@@ -81,28 +81,22 @@ func DetectMemory() MemoryInfo {
 	}
 
 	// THP
-	if sysfs.Exists(sysfs.THPEnabled) {
-		if v, err := sysfs.ReadBracketedValue(sysfs.THPEnabled); err == nil {
-			info.THPEnabled = v
-		}
+	if v, err := sysfs.ReadBracketedValue(sysfs.THPEnabled); err == nil {
+		info.THPEnabled = v
 	}
-	if sysfs.Exists(sysfs.THPDefrag) {
-		if v, err := sysfs.ReadBracketedValue(sysfs.THPDefrag); err == nil {
-			info.THPDefrag = v
-		}
+	if v, err := sysfs.ReadBracketedValue(sysfs.THPDefrag); err == nil {
+		info.THPDefrag = v
 	}
 
 	// Zswap
-	if sysfs.Exists(sysfs.ZswapEnabled) {
-		if v, err := sysfs.ReadBool(sysfs.ZswapEnabled); err == nil {
-			info.ZswapEnabled = v
-		}
-		if v, err := sysfs.ReadString(sysfs.ZswapCompressor); err == nil {
-			info.ZswapCompressor = v
-		}
-		if v, err := sysfs.ReadInt(sysfs.ZswapMaxPool); err == nil {
-			info.ZswapMaxPool = v
-		}
+	if v, err := sysfs.ReadBool(sysfs.ZswapEnabled); err == nil {
+		info.ZswapEnabled = v
+	}
+	if v, err := sysfs.ReadString(sysfs.ZswapCompressor); err == nil {
+		info.ZswapCompressor = v
+	}
+	if v, err := sysfs.ReadInt(sysfs.ZswapMaxPool); err == nil {
+		info.ZswapMaxPool = v
 	}
 
 	// Zram devices

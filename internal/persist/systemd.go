@@ -1,8 +1,6 @@
 package persist
 
-import (
-	"os/exec"
-)
+import "os/exec"
 
 // ReloadSysctl applies sysctl settings from the drop-in file.
 func ReloadSysctl() error {

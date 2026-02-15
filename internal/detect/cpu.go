@@ -2,7 +2,6 @@ package detect
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/krisk248/tuner/internal/output"
@@ -68,10 +67,10 @@ func DetectCPU() CPUInfo {
 	}
 
 	// Architecture
-	if arch, err := os.ReadFile("/proc/sys/kernel/arch"); err == nil {
-		info.Architecture = strings.TrimSpace(string(arch))
+	if arch, err := sysfs.ReadString("/proc/sys/kernel/arch"); err == nil {
+		info.Architecture = arch
 	} else {
-		info.Architecture = "x86_64" // default assumption
+		info.Architecture = "x86_64"
 	}
 
 	// Frequency scaling
@@ -86,13 +85,11 @@ func DetectCPU() CPUInfo {
 	}
 
 	// EPP (may not exist on older kernels)
-	if sysfs.Exists(sysfs.CPUEPP) {
-		if epp, err := sysfs.ReadString(sysfs.CPUEPP); err == nil {
-			info.EPP = epp
-		}
-		if epps, err := sysfs.ReadFields(sysfs.CPUAvailEPP); err == nil {
-			info.AvailEPP = epps
-		}
+	if epp, err := sysfs.ReadString(sysfs.CPUEPP); err == nil {
+		info.EPP = epp
+	}
+	if epps, err := sysfs.ReadFields(sysfs.CPUAvailEPP); err == nil {
+		info.AvailEPP = epps
 	}
 
 	// Frequencies (in KHz in sysfs, convert to MHz)
@@ -105,10 +102,8 @@ func DetectCPU() CPUInfo {
 	if freq, err := sysfs.ReadInt(sysfs.CPUFreqMax); err == nil {
 		info.MaxFreqMHz = freq / 1000
 	}
-	if sysfs.Exists(sysfs.CPUFreqBaseFreq) {
-		if freq, err := sysfs.ReadInt(sysfs.CPUFreqBaseFreq); err == nil {
-			info.BaseFreqMHz = freq / 1000
-		}
+	if freq, err := sysfs.ReadInt(sysfs.CPUFreqBaseFreq); err == nil {
+		info.BaseFreqMHz = freq / 1000
 	}
 
 	// Turbo boost
@@ -167,12 +162,10 @@ func CPUSection(info CPUInfo) output.Section {
 
 func governorStatus(gov string) output.Status {
 	switch gov {
-	case "performance":
+	case "performance", "schedutil":
 		return output.StatusGood
 	case "powersave":
 		return output.StatusWarn
-	case "schedutil":
-		return output.StatusGood
 	default:
 		return output.StatusInfo
 	}

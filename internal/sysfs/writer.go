@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // WriteString writes a string value to a sysfs/procfs path.
@@ -29,15 +30,7 @@ func WriteSysctl(key, value string) error {
 }
 
 func sysCtlKeyToPath(key string) string {
-	result := make([]byte, len(key))
-	for i := 0; i < len(key); i++ {
-		if key[i] == '.' {
-			result[i] = '/'
-		} else {
-			result[i] = key[i]
-		}
-	}
-	return string(result)
+	return strings.ReplaceAll(key, ".", "/")
 }
 
 // WriteAllCPUs writes a value to a per-CPU sysfs attribute for all CPUs.

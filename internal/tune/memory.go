@@ -101,20 +101,18 @@ func computeMemoryChanges(v profile.Values) []Change {
 	}
 
 	// THP
-	if sysfs.Exists(sysfs.THPEnabled) {
-		if cur, err := sysfs.ReadBracketedValue(sysfs.THPEnabled); err == nil && cur != v.THPEnabled {
-			target := v.THPEnabled
-			changes = append(changes, Change{
-				Subsystem: "memory",
-				Parameter: "THP",
-				OldValue:  cur,
-				NewValue:  target,
-				Path:      sysfs.THPEnabled,
-				ApplyFunc: func() error {
-					return sysfs.WriteString(sysfs.THPEnabled, target)
-				},
-			})
-		}
+	if cur, err := sysfs.ReadBracketedValue(sysfs.THPEnabled); err == nil && cur != v.THPEnabled {
+		target := v.THPEnabled
+		changes = append(changes, Change{
+			Subsystem: "memory",
+			Parameter: "THP",
+			OldValue:  cur,
+			NewValue:  target,
+			Path:      sysfs.THPEnabled,
+			ApplyFunc: func() error {
+				return sysfs.WriteString(sysfs.THPEnabled, target)
+			},
+		})
 	}
 
 	return changes

@@ -77,16 +77,13 @@ func DetectStorage() StorageInfo {
 
 		// Scheduler
 		schedPath := filepath.Join(base, "queue/scheduler")
-		if sysfs.Exists(schedPath) {
-			if sched, err := sysfs.ReadBracketedValue(schedPath); err == nil {
-				disk.Scheduler = sched
-			}
-			if raw, err := sysfs.ReadString(schedPath); err == nil {
-				// Parse available schedulers (strip brackets)
-				raw = strings.ReplaceAll(raw, "[", "")
-				raw = strings.ReplaceAll(raw, "]", "")
-				disk.AvailScheds = strings.Fields(raw)
-			}
+		if sched, err := sysfs.ReadBracketedValue(schedPath); err == nil {
+			disk.Scheduler = sched
+		}
+		if raw, err := sysfs.ReadString(schedPath); err == nil {
+			raw = strings.ReplaceAll(raw, "[", "")
+			raw = strings.ReplaceAll(raw, "]", "")
+			disk.AvailScheds = strings.Fields(raw)
 		}
 
 		// Size (in 512-byte sectors)
@@ -95,11 +92,8 @@ func DetectStorage() StorageInfo {
 		}
 
 		// Model
-		modelPath := filepath.Join(base, "device/model")
-		if sysfs.Exists(modelPath) {
-			if model, err := sysfs.ReadString(modelPath); err == nil {
-				disk.Model = model
-			}
+		if model, err := sysfs.ReadString(filepath.Join(base, "device/model")); err == nil {
+			disk.Model = model
 		}
 
 		// Nr requests

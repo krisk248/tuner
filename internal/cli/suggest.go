@@ -48,31 +48,16 @@ func runSuggest(cmd *cobra.Command, args []string) error {
 
 func buildSuggestions(p profile.Profile) []output.Section {
 	var sections []output.Section
-
-	// CPU suggestions
-	cpuSec := suggestCPU(p)
-	if len(cpuSec.Fields) > 0 {
-		sections = append(sections, cpuSec)
+	for _, sec := range []output.Section{
+		suggestCPU(p),
+		suggestMemory(p),
+		suggestStorage(p),
+		suggestNetwork(p),
+	} {
+		if len(sec.Fields) > 0 {
+			sections = append(sections, sec)
+		}
 	}
-
-	// Memory suggestions
-	memSec := suggestMemory(p)
-	if len(memSec.Fields) > 0 {
-		sections = append(sections, memSec)
-	}
-
-	// Storage suggestions
-	storageSec := suggestStorage(p)
-	if len(storageSec.Fields) > 0 {
-		sections = append(sections, storageSec)
-	}
-
-	// Network suggestions
-	netSec := suggestNetwork(p)
-	if len(netSec.Fields) > 0 {
-		sections = append(sections, netSec)
-	}
-
 	return sections
 }
 
@@ -84,29 +69,23 @@ func suggestCPU(p profile.Profile) output.Section {
 		sec.Fields = append(sec.Fields, diffField("Governor", gov, v.Governor))
 	}
 
-	if sysfs.Exists(sysfs.CPUEPP) {
-		if epp, err := sysfs.ReadString(sysfs.CPUEPP); err == nil && epp != v.EPP {
-			sec.Fields = append(sec.Fields, diffField("Energy Perf Pref", epp, v.EPP))
-		}
+	if epp, err := sysfs.ReadString(sysfs.CPUEPP); err == nil && epp != v.EPP {
+		sec.Fields = append(sec.Fields, diffField("Energy Perf Pref", epp, v.EPP))
 	}
 
 	// Turbo
 	turboOn := false
-	if sysfs.Exists(sysfs.IntelNoTurbo) {
-		if val, err := sysfs.ReadInt(sysfs.IntelNoTurbo); err == nil {
-			turboOn = val == 0
-		}
-	} else if sysfs.Exists(sysfs.CPUBoost) {
-		if val, err := sysfs.ReadInt(sysfs.CPUBoost); err == nil {
-			turboOn = val == 1
-		}
+	if val, err := sysfs.ReadInt(sysfs.IntelNoTurbo); err == nil {
+		turboOn = val == 0
+	} else if val, err := sysfs.ReadInt(sysfs.CPUBoost); err == nil {
+		turboOn = val == 1
 	}
 	if turboOn != v.TurboOn {
 		cur := "off"
-		rec := "off"
 		if turboOn {
 			cur = "on"
 		}
+		rec := "off"
 		if v.TurboOn {
 			rec = "on"
 		}
@@ -130,10 +109,8 @@ func suggestMemory(p profile.Profile) output.Section {
 		sec.Fields = append(sec.Fields, diffField("Dirty Ratio", fmt.Sprintf("%d", cur), fmt.Sprintf("%d", v.DirtyRatio)))
 	}
 
-	if sysfs.Exists(sysfs.THPEnabled) {
-		if cur, err := sysfs.ReadBracketedValue(sysfs.THPEnabled); err == nil && cur != v.THPEnabled {
-			sec.Fields = append(sec.Fields, diffField("THP", cur, v.THPEnabled))
-		}
+	if cur, err := sysfs.ReadBracketedValue(sysfs.THPEnabled); err == nil && cur != v.THPEnabled {
+		sec.Fields = append(sec.Fields, diffField("THP", cur, v.THPEnabled))
 	}
 
 	return sec

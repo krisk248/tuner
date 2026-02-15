@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -103,11 +104,10 @@ func cpuLines() []string {
 	if stat, err := sysfs.ReadLines("/proc/stat"); err == nil && len(stat) > 0 {
 		fields := strings.Fields(stat[0])
 		if len(fields) >= 5 && fields[0] == "cpu" {
-			var user, nice, system, idle int64
-			fmt.Sscanf(fields[1], "%d", &user)
-			fmt.Sscanf(fields[2], "%d", &nice)
-			fmt.Sscanf(fields[3], "%d", &system)
-			fmt.Sscanf(fields[4], "%d", &idle)
+			user, _ := strconv.ParseInt(fields[1], 10, 64)
+			nice, _ := strconv.ParseInt(fields[2], 10, 64)
+			system, _ := strconv.ParseInt(fields[3], 10, 64)
+			idle, _ := strconv.ParseInt(fields[4], 10, 64)
 			total := user + nice + system + idle
 			if total > 0 {
 				usePct := float64(user+nice+system) / float64(total) * 100
@@ -210,30 +210,24 @@ func parseMemInfo() map[string]int64 {
 			continue
 		}
 		key := strings.TrimSuffix(fields[0], ":")
-		var val int64
-		fmt.Sscanf(fields[1], "%d", &val)
+		val, _ := strconv.ParseInt(fields[1], 10, 64)
 		result[key] = val
 	}
 	return result
 }
 
 func renderBar(pct float64, width int) string {
-	filled := int(pct / 100 * float64(width))
-	if filled > width {
-		filled = width
-	}
-	if filled < 0 {
-		filled = 0
-	}
-
+	filled := max(0, min(int(pct/100*float64(width)), width))
 	bar := strings.Repeat("█", filled) + strings.Repeat("░", width-filled)
 
-	if pct > 90 {
+	switch {
+	case pct > 90:
 		return color.RedString("[%s]", bar)
-	} else if pct > 75 {
+	case pct > 75:
 		return color.YellowString("[%s]", bar)
+	default:
+		return color.GreenString("[%s]", bar)
 	}
-	return color.GreenString("[%s]", bar)
 }
 
 func formatRate(kbps float64) string {
