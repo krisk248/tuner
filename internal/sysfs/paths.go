@@ -46,6 +46,12 @@ const (
 	NetCoreBufMax = "/proc/sys/net/core/rmem_max"
 	NetCoreWBufMax = "/proc/sys/net/core/wmem_max"
 
+	// Server
+	FileMax      = "/proc/sys/fs/file-max"
+	Somaxconn    = "/proc/sys/net/core/somaxconn"
+	ConntrackMax = "/proc/sys/net/netfilter/nf_conntrack_max"
+	PortRange    = "/proc/sys/net/ipv4/ip_local_port_range"
+
 	// Power
 	PowerSupplyBase = "/sys/class/power_supply"
 	ChassisType     = "/sys/class/dmi/id/chassis_type"

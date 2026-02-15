@@ -37,11 +37,11 @@ func (e *Engine) ComputeChanges() []Change {
 	changes = append(changes, computeStorageChanges(e.Profile.Values)...)
 	changes = append(changes, computeNetworkChanges(e.Profile.Values)...)
 
-	// Skip power tuning if TLP is active
+	// Skip power tuning if TLP is enabled (even if not currently active)
 	powerInfo := detect.DetectPower()
-	if e.Profile.Values.SkipIfTLP && powerInfo.TLPActive {
+	if e.Profile.Values.SkipIfTLP && powerInfo.TLP.Enabled {
 		yellow := color.New(color.FgYellow)
-		yellow.Println("Warning: TLP is active. Skipping power-related tuning.")
+		yellow.Println("Warning: TLP is enabled. Skipping power-related tuning.")
 	}
 
 	return changes

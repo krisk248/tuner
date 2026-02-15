@@ -3,12 +3,22 @@ package detect
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/krisk248/tuner/internal/output"
 	"github.com/krisk248/tuner/internal/sysfs"
 )
+
+// SMARTInfo holds disk health data.
+type SMARTInfo struct {
+	PercentUsed    int // wear level 0-100
+	PowerOnHours   int
+	UnsafeShutdowns int
+	MediaErrors    int
+}
 
 // DiskInfo holds per-device storage info.
 type DiskInfo struct {
@@ -21,6 +31,7 @@ type DiskInfo struct {
 	Model      string
 	NrRequests int
 	ReadAhead  int
+	SMART      *SMARTInfo
 }
 
 // StorageInfo holds overall storage diagnostic data.
@@ -105,6 +116,11 @@ func DetectStorage() StorageInfo {
 			disk.ReadAhead = v
 		}
 
+		// SMART data for NVMe
+		if disk.Type == "nvme" {
+			disk.SMART = detectNVMeSMART(name)
+		}
+
 		info.Disks = append(info.Disks, disk)
 	}
 
@@ -152,6 +168,30 @@ func StorageSection(info StorageInfo) output.Section {
 				output.Field{Key: "  Read Ahead", Value: fmt.Sprintf("%d KB", disk.ReadAhead), Status: output.StatusInfo},
 			)
 		}
+
+		if disk.SMART != nil {
+			s := disk.SMART
+			wearStatus := output.StatusGood
+			if s.PercentUsed > 90 {
+				wearStatus = output.StatusBad
+			} else if s.PercentUsed > 70 {
+				wearStatus = output.StatusWarn
+			}
+			sec.Fields = append(sec.Fields,
+				output.Field{Key: "  Wear Level", Value: fmt.Sprintf("%d%% used", s.PercentUsed), Status: wearStatus},
+				output.Field{Key: "  Power On", Value: fmt.Sprintf("%d hours", s.PowerOnHours), Status: output.StatusInfo},
+			)
+			if s.UnsafeShutdowns > 0 {
+				sec.Fields = append(sec.Fields,
+					output.Field{Key: "  Unsafe Shutdowns", Value: fmt.Sprintf("%d", s.UnsafeShutdowns), Status: output.StatusWarn},
+				)
+			}
+			if s.MediaErrors > 0 {
+				sec.Fields = append(sec.Fields,
+					output.Field{Key: "  Media Errors", Value: fmt.Sprintf("%d", s.MediaErrors), Status: output.StatusBad},
+				)
+			}
+		}
 	}
 
 	// Show filesystems
@@ -164,6 +204,40 @@ func StorageSection(info StorageInfo) output.Section {
 	}
 
 	return sec
+}
+
+func detectNVMeSMART(diskName string) *SMARTInfo {
+	// Try nvme smart-log (needs root, but best data)
+	out, err := exec.Command("nvme", "smart-log", "/dev/"+diskName).Output()
+	if err != nil {
+		return nil
+	}
+
+	s := &SMARTInfo{}
+	for _, line := range strings.Split(string(out), "\n") {
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(strings.ToLower(parts[0]))
+		val := strings.TrimSpace(parts[1])
+		// Strip trailing % or commas
+		val = strings.ReplaceAll(val, ",", "")
+		val = strings.TrimSuffix(val, "%")
+		val = strings.TrimSpace(val)
+
+		switch key {
+		case "percentage used":
+			s.PercentUsed, _ = strconv.Atoi(val)
+		case "power on hours":
+			s.PowerOnHours, _ = strconv.Atoi(val)
+		case "unsafe shutdowns":
+			s.UnsafeShutdowns, _ = strconv.Atoi(val)
+		case "media and data integrity errors":
+			s.MediaErrors, _ = strconv.Atoi(val)
+		}
+	}
+	return s
 }
 
 func schedulerStatus(diskType, sched string) output.Status {

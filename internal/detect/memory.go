@@ -3,12 +3,22 @@ package detect
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/krisk248/tuner/internal/output"
 	"github.com/krisk248/tuner/internal/sysfs"
 )
+
+// ZramInfo holds info about a single zram device.
+type ZramInfo struct {
+	Name         string
+	DiskSizeGB   float64
+	Algorithm    string
+	OrigDataSize int64 // bytes
+	ComprSize    int64 // bytes
+}
 
 // MemoryInfo holds memory diagnostic data.
 type MemoryInfo struct {
@@ -27,7 +37,7 @@ type MemoryInfo struct {
 	ZswapEnabled bool
 	ZswapCompressor string
 	ZswapMaxPool int
-	ZramDevices []string
+	ZramDevices []ZramInfo
 	HugePages   int
 }
 
@@ -103,7 +113,30 @@ func DetectMemory() MemoryInfo {
 	entries, _ := os.ReadDir(sysfs.BlockBase)
 	for _, e := range entries {
 		if strings.HasPrefix(e.Name(), "zram") {
-			info.ZramDevices = append(info.ZramDevices, e.Name())
+			zram := ZramInfo{Name: e.Name()}
+			base := filepath.Join(sysfs.BlockBase, e.Name())
+
+			if v, err := sysfs.ReadInt64(filepath.Join(base, "disksize")); err == nil {
+				zram.DiskSizeGB = float64(v) / (1024 * 1024 * 1024)
+			}
+			if v, err := sysfs.ReadString(filepath.Join(base, "comp_algorithm")); err == nil {
+				// Format: "lzo lzo-rle [zstd] lz4" - extract active one
+				if bracketed, err := sysfs.ReadBracketedValue(filepath.Join(base, "comp_algorithm")); err == nil {
+					zram.Algorithm = bracketed
+				} else {
+					zram.Algorithm = v
+				}
+			}
+			// mm_stat: orig_data_size compr_data_size mem_used_total ...
+			if stat, err := sysfs.ReadString(filepath.Join(base, "mm_stat")); err == nil {
+				fields := strings.Fields(stat)
+				if len(fields) >= 2 {
+					zram.OrigDataSize, _ = strconv.ParseInt(fields[0], 10, 64)
+					zram.ComprSize, _ = strconv.ParseInt(fields[1], 10, 64)
+				}
+			}
+
+			info.ZramDevices = append(info.ZramDevices, zram)
 		}
 	}
 
@@ -185,9 +218,19 @@ func MemorySection(info MemoryInfo) output.Section {
 	}
 
 	// Zram
-	if len(info.ZramDevices) > 0 {
+	for _, z := range info.ZramDevices {
+		val := fmt.Sprintf("%.1f GB", z.DiskSizeGB)
+		if z.Algorithm != "" {
+			val = fmt.Sprintf("%.1f GB (%s", z.DiskSizeGB, z.Algorithm)
+			if z.ComprSize > 0 {
+				ratio := float64(z.OrigDataSize) / float64(z.ComprSize)
+				val = fmt.Sprintf("%s, %.1f:1 ratio)", val, ratio)
+			} else {
+				val += ")"
+			}
+		}
 		sec.Fields = append(sec.Fields,
-			output.Field{Key: "Zram Devices", Value: strings.Join(info.ZramDevices, ", "), Status: output.StatusInfo},
+			output.Field{Key: z.Name, Value: val, Status: output.StatusInfo},
 		)
 	}
 

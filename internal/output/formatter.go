@@ -26,6 +26,16 @@ const (
 	StatusInfo
 )
 
+// DiagMode controls profile-aware output filtering.
+type DiagMode string
+
+const (
+	ModeLaptop  DiagMode = "laptop"
+	ModeDesktop DiagMode = "desktop"
+	ModeServer  DiagMode = "server"
+	ModeAuto    DiagMode = "auto"
+)
+
 // Formatter defines the interface for output rendering.
 type Formatter interface {
 	Format(w io.Writer, sections []Section) error
